@@ -1,0 +1,26 @@
+<div class="card">
+    <div class="card-body">
+            <div class="h2">
+                <!-- Имя автора -->
+                {{ profile.author.first_name }} {{ profile.author.last_name }}
+            </div>
+            <div class="h3 text-muted">
+                 <!-- username автора -->
+                 @{{ profile.author }}
+            </div>
+    </div>
+    <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                    <div class="h6 text-muted">
+                    Подписчиков: {{ profile.followers }} <br />
+                    Подписан: {{ profile.following }}
+                    </div>
+            </li>
+            <li class="list-group-item">
+                    <div class="h6 text-muted">
+                        <!-- Количество записей -->
+                        Записей: {{ profile.posts_count }}
+                    </div>
+            </li>
+    </ul>
+</div>

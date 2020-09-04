@@ -1,0 +1,13 @@
+{% extends "posts/base.html" %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block header %}Последние обновления на сайте{% endblock %}
+{% block content %}
+
+    {% for post in page %}
+    {% include "posts/post_block.html" %}
+    {% endfor %}
+    {% if page.has_other_pages %}
+    {% include "posts/paginator.html" with items=page paginator=paginator %}
+    {% endif %}
+
+{% endblock %}

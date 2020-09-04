@@ -1,0 +1,19 @@
+{% comment "Без этого файла не проходят автоматические тесты. Шаблоны теперь в приложении posts" %}
+{% extends "posts/base.html" %}
+{% block title %}Записи сообщества {{ group.title }}{% endblock %}
+{% block header %}{{ group }}{% endblock %}
+{% block content %}
+    <p>
+        {{ group.description|linebreaks }}
+    </p>
+    {% for post in posts %}
+        <h3>
+            Автор: {{ post.author.get_full_name }}, Дата публикации: {{ post.pub_date|date:"d M Y" }}
+        </h3>
+        <p>
+            {{ post.text|linebreaksbr }}
+        </p>
+        {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+{% endblock %}
+{% endcomment %}
