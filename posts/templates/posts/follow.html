@@ -1,13 +1,11 @@
 {% extends "posts/base.html" %}
-{% block title %}Последние обновления на сайте{% endblock %}
-{% block header %}Последние записи{% endblock %}
+{% block title %}Любимые авторы{% endblock %}
+{% block header %}Авторы, на которых вы подписаны{% endblock %}
 {% block content %}
-    {% include "posts/menu.html" with index=True %}
+    {% include "posts/menu.html" with follow=True %}
     {% for post in page %}
     {% include "posts/post_block.html" %}
     {% endfor %}
     {% if page.has_other_pages %}
     {% include "posts/paginator.html" with items=page paginator=paginator %}
     {% endif %}
-
-{% endblock %}

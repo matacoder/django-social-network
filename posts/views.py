@@ -1,12 +1,9 @@
-import random
-
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.shortcuts import get_object_or_404, redirect, render, reverse, get_list_or_404
 
 from .forms import PostForm, CommentForm
-from .models import Group, Post, User
-from functools import lru_cache
+from .models import Group, Post, User, Follow
 from django.views.decorators.cache import cache_page
 
 
@@ -85,13 +82,13 @@ def new_post(request):
     )
 
 
-@lru_cache(maxsize=None)
 def profile_extract(username):
     """ Get data for profile template """
     author = get_object_or_404(User, username=username)
-    # TODO: probably next sprint (randint now)
-    followers = random.randint(500, 1000)
-    following = random.randint(600, 2000)
+    # Note that we swap followers and following
+    # because it is not ours profile but author's
+    following = author.follower.count()
+    followers = author.following.count()
     posts_count = author.posts.count()
     return {
         "author": author,
@@ -103,18 +100,24 @@ def profile_extract(username):
 
 # @cache_page(60 * 15)
 def profile(request, username):
+    user = request.user
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
+    if Follow.objects.filter(user=user, author=author):
+        following = True
+    else:
+        following = False
     return render(
         request, "posts/profile.html",
         {
             "page": page,
             "paginator": paginator,
             "profile": profile_extract(username),
-            "author": author
+            "author": author,
+            'following': following
         }
     )
 
@@ -187,3 +190,47 @@ def page_not_found(request, exception):
 
 def server_error(request):
     return render(request, "misc/500.html", status=500)
+
+
+@login_required
+def follow_index(request):
+    logged = request.user
+    followings = get_list_or_404(Follow, user=logged)
+    posts = []
+    for following in followings:
+        author = get_object_or_404(User, username=following.author)
+        posts += author.posts.all()
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get("page")
+    page = paginator.get_page(page_number)
+    return render(
+        request, "posts/follow.html",
+        {
+            "page": page,
+            "paginator": paginator,
+            'profile': profile_extract(logged)
+        }
+    )
+
+
+@login_required
+def profile_follow(request, username):
+    url = reverse('profile', args=[username])
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    if Follow.objects.filter(user=user, author=author) or author == user:
+        return redirect(url)
+    Follow.objects.create(
+            user=user, author=author
+        )
+    return redirect(url)
+
+
+@login_required
+def profile_unfollow(request, username):
+    url = reverse('profile', args=[username])
+    user = request.user
+    author = get_object_or_404(User, username=username)
+    instance = get_object_or_404(Follow, user=user, author__exact=author)
+    instance.delete()
+    return redirect(url)

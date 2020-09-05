@@ -8,6 +8,7 @@ urlpatterns = [
     path("new/", views.new_post, name="new_post"),
     path("404/", views.page_not_found, name="e404"),
     path("500/", views.server_error, name="e500"),
+    path("follow/", views.follow_index, name="follow_index"),
     path("<str:username>/", views.profile, name="profile"),
     path(
         "<str:username>/<int:post_id>/",
@@ -23,5 +24,15 @@ urlpatterns = [
         "<username>/<int:post_id>/comment",
         views.add_comment,
         name="add_comment"
-    )
+    ),
+    path(
+        "<str:username>/follow/",
+        views.profile_follow,
+        name="profile_follow"
+    ),
+    path(
+        "<str:username>/unfollow/",
+        views.profile_unfollow,
+        name="profile_unfollow"
+    ),
 ]

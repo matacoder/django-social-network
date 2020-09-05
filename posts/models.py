@@ -83,3 +83,22 @@ class Comment(models.Model):
             f"Комментарий от {pubdate:%Y-%m-%d %H:%M} автора {pubauthor} "
             f"создан ({pubshort})"
         )
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="follower",
+        verbose_name="Кто подписался"
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="following",
+        verbose_name="На кого подписался"
+    )
