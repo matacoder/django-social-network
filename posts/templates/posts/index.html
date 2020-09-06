@@ -1,11 +1,16 @@
 {% extends "posts/base.html" %}
+{% load cache %}
 {% block title %}Последние обновления на сайте{% endblock %}
 {% block header %}Последние записи{% endblock %}
+
 {% block content %}
+
     {% include "posts/menu.html" with index=True %}
+    
     {% for post in page %}
     {% include "posts/post_block.html" %}
     {% endfor %}
+    
     {% if page.has_other_pages %}
     {% include "posts/paginator.html" with items=page paginator=paginator %}
     {% endif %}

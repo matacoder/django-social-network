@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.shortcuts import reverse
-from .models import Group, Post
+from .models import Group, Post, Follow
 from django.core.files import File
 from django.core.cache import cache
 
@@ -18,6 +18,10 @@ class TestPostsAndLogin(TestCase):
         self.user = User.objects.create_user(
             username="sarah", email="connor.s@skynet.com", password="12345"
         )
+        # create follow user
+        self.author = User.objects.create_user(
+            username="skynet", email="admin@skynet.com", password="12345"
+        )
         # create group
         self.testgroup = Group.objects.create(
             title="Test Group",
@@ -30,10 +34,10 @@ class TestPostsAndLogin(TestCase):
             description="Testing Around 2",
         )
         # create post
-        with open('posts/file.jpg', 'rb') as img:
+        with open("posts/file.jpg", "rb") as img:
             self.post = Post.objects.create(
-                text=("You're talking about things I haven't"
-                      " done yet in the past tense. It's driving me crazy!"),
+                text=("Youre talking about things I havent"
+                      " done yet in the past tense. Its driving me crazy!"),
                 author=self.user,
                 group=self.testgroup,
                 image=File(img)
@@ -44,12 +48,12 @@ class TestPostsAndLogin(TestCase):
 
     def test_post_with_image(self):
         """ Post with image is added """
-        url = reverse('new_post')
-        with open('posts/file.jpg', 'rb') as img:
+        url = reverse("new_post")
+        with open("posts/file.jpg", "rb") as img:
             data = {
-                'text': 'Abracadabra with image',
-                'group': self.testgroup.id,
-                'image': img
+                "text": "Abracadabra with image",
+                "group": self.testgroup.id,
+                "image": img
             }
             response = self.client.post(url, data=data, follow=True)
             cache.clear()
@@ -57,20 +61,20 @@ class TestPostsAndLogin(TestCase):
             urls = self.generate_urls()
             for url in urls:
                 response = self.client.get(url)
-                self.assertIn('img'.encode(), response.content)
+                self.assertIn("img".encode(), response.content)
 
     def test_non_img_file(self):
         """ Test uploading non-image file README.md """
-        url = reverse('new_post')
-        with open('README.md', 'rb') as img:
+        url = reverse("new_post")
+        with open("README.md", "rb") as img:
             data = {
-                'text': 'Abracadabra with non-image',
-                'group': self.testgroup.id,
-                'image': img
+                "text": "Abracadabra with non-image",
+                "group": self.testgroup.id,
+                "image": img
             }
             cache.clear()
             response = self.client.post(url, data=data)
-            self.assertFalse(response.context['form'].is_valid())
+            self.assertFalse(response.context["form"].is_valid())
 
     def generate_urls(self):
         index = reverse("index")
@@ -88,7 +92,7 @@ class TestPostsAndLogin(TestCase):
 
     def test_404_url(self):
         """ Test 404 """
-        response = self.client.get('/404error/')
+        response = self.client.get("/404error/")
         self.assertEqual(response.status_code, 404)
 
     def test_logged_in_post(self):
@@ -210,6 +214,97 @@ class TestPostsAndLogin(TestCase):
 
     def test_cache(self):
         """ Test 20 sec index cache """
-        response = self.client.get(reverse('index'))
-        cache = response['Cache-Control']
-        self.assertEqual(cache, 'max-age=20')
+        response = self.client.get(reverse("index"))
+        cache_test = response["Cache-Control"]
+        self.assertEqual(cache_test, "max-age=20")
+        self.assertEqual(len(response.context["page"]), 1)
+        # create skynet post
+        self.post_skynet = Post.objects.create(
+                text=("Skynet test"),
+                author=self.author,
+                group=self.testgroup
+            )
+        response = self.client.get(reverse("index"))
+        with self.assertRaises(TypeError):
+            len(response.context["page"])
+        cache.clear()
+        response = self.client.get(reverse("index"))
+        self.assertEqual(len(response.context["page"]), 2)
+
+    def test_logged_in_subscribe(self):
+        """ Logged in can subscribe to authors """
+        response = self.client.get(
+            reverse("profile_follow", args=["skynet"]),
+            follow=True
+        )
+        cache.clear()
+        self.assertEqual(response.status_code, 200)
+        testobj = Follow.objects.get(user=self.user, author=self.author)
+        self.assertTrue(testobj)
+
+    def test_logged_in_unsubscribe(self):
+        """ Logged in can unsubscribe from authors """
+        response = self.client.get(
+            reverse("profile_follow", args=["skynet"]),
+            follow=True
+        )
+        cache.clear()
+        response = self.client.get(
+            reverse("profile_unfollow", args=["skynet"]),
+            follow=True
+        )
+        cache.clear()
+        self.assertEqual(response.status_code, 200)
+        testobj = Follow.objects.filter(user=self.user, author=self.author)
+        self.assertFalse(testobj)
+
+    def test_logged_out_subscribe(self):
+        """ Logged out can not subscribe to authors """
+        response = self.client_unauthorized.get(
+            reverse("profile_follow", args=["sarah"])
+        )
+        self.assertEqual(response.status_code, 302)
+        testobj = Follow.objects.filter(author=self.user)
+        self.assertFalse(testobj)
+
+    def test_new_post_on_follow_page(self):
+        """ New post displays on follow page
+            of subscribed authors and not """
+        self.client.get(
+            reverse("profile_follow", args=["skynet"]),
+            follow=True
+        )
+        # create skynet post
+        self.post_skynet = Post.objects.create(
+                text=("Skynet test"),
+                author=self.author,
+                group=self.testgroup
+            )
+        display_resp = self.client.get(
+            reverse("follow_index"),
+            follow=True
+        )
+        self.assertIn("Skynet".encode(), display_resp.content)
+
+    def test_logged_in_comment(self):
+        """ Logged user can comment """
+        response = self.client.post(
+            reverse("add_comment", args=["sarah", "1"]),
+            {
+                "text": "Commenting",
+                "author": self.user
+            },
+            follow=True
+        )
+        self.assertIn("Commenting".encode(), response.content)
+
+    def test_logged_out_comment(self):
+        """ Logged out can not comment """
+        response = self.client_unauthorized.post(
+            reverse("add_comment", args=["sarah", "1"]),
+            {
+                "text": "Commenting"
+            },
+            follow=True
+        )
+        self.assertNotIn("Commenting".encode(), response.content)

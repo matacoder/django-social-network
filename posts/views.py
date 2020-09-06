@@ -1,16 +1,18 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404, redirect, render, reverse, get_list_or_404
+from django.shortcuts import get_object_or_404, redirect, render, reverse
 
 from .forms import PostForm, CommentForm
 from .models import Group, Post, User, Follow
 from django.views.decorators.cache import cache_page
 
 
-@cache_page(20)
+@cache_page(20, key_prefix="index_page")
 def index(request):
-    username = request.user
-    post_list = Post.objects.order_by("-pub_date").all()
+    post_list = Post.objects.select_related(
+        'author', 'group'
+    ).order_by("-pub_date").all()
+
     paginator = Paginator(post_list, 10)
     # показывать по 10 записей на странице.
     page_number = request.GET.get("page")
@@ -22,12 +24,12 @@ def index(request):
         "posts/index.html",
         {
             "page": page,
-            "paginator": paginator,
-            "profile": profile_extract(username)
+            "paginator": paginator
         }
     )
 
 
+@login_required
 def add_comment(request, username, post_id):
     post = get_object_or_404(Post, pk=post_id, author__username=username)
     url = reverse(
@@ -47,7 +49,6 @@ def add_comment(request, username, post_id):
 
 # @cache_page(60 * 15)
 def group_posts(request, slug):
-    username = request.user
     group = get_object_or_404(Group, slug=slug)
     posts = group.group_posts.all()
     paginator = Paginator(posts, 10)
@@ -58,8 +59,8 @@ def group_posts(request, slug):
         {
             "page": page,
             "paginator": paginator,
-            "group": group,
-            "profile": profile_extract(username)}
+            "group": group
+            }
     )
 
 
@@ -100,16 +101,18 @@ def profile_extract(username):
 
 # @cache_page(60 * 15)
 def profile(request, username):
-    user = request.user
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
-    if Follow.objects.filter(user=user, author=author):
-        following = True
-    else:
-        following = False
+    following = False
+    if request.user.is_authenticated:
+        user = request.user
+
+        if Follow.objects.filter(user=user, author=author):
+            following = True
+
     return render(
         request, "posts/profile.html",
         {
@@ -178,8 +181,6 @@ def post_edit(request, username, post_id):
 
 
 def page_not_found(request, exception):
-    # Переменная exception содержит отладочную информацию,
-    # выводить её в шаблон пользователской страницы 404 мы не станем
     return render(
         request,
         "misc/404.html",
@@ -195,10 +196,13 @@ def server_error(request):
 @login_required
 def follow_index(request):
     logged = request.user
-    followings = get_list_or_404(Follow, user=logged)
+    followings = Follow.objects.select_related(
+        'author', 'user'
+    ).filter(user=logged)
+
     posts = []
     for following in followings:
-        author = get_object_or_404(User, username=following.author)
+        author = User.objects.get(username=following.author)
         posts += author.posts.all()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
@@ -218,7 +222,9 @@ def profile_follow(request, username):
     url = reverse('profile', args=[username])
     user = request.user
     author = get_object_or_404(User, username=username)
-    if Follow.objects.filter(user=user, author=author) or author == user:
+    if Follow.objects.filter(user=user, author=author):
+        return redirect(url)
+    if author == user:
         return redirect(url)
     Follow.objects.create(
             user=user, author=author
