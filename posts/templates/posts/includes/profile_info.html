@@ -2,38 +2,42 @@
     <div class="card-body">
             <div class="h2">
                 <!-- Имя автора -->
-                {{ profile.author.first_name }} {{ profile.author.last_name }}
+                {{ author.first_name }} {{ author.last_name }}
             </div>
             <div class="h3 text-muted">
                  <!-- username автора -->
-                 @{{ profile.author }}
+                 @{{ author }}
             </div>
     </div>
     <ul class="list-group list-group-flush">
             <li class="list-group-item">
                     <div class="h6 text-muted">
-                    Подписчиков: {{ profile.followers }} <br />
-                    Подписан: {{ profile.following }}
+                    Подписчиков: {{ author.follower.count }} <br />
+                    Подписан: {{ author.following.count }}
                     </div>
             </li>
             <li class="list-group-item">
                     <div class="h6 text-muted">
                         <!-- Количество записей -->
-                        Записей: {{ profile.posts_count }}
+                        Записей: {{ author.posts.count }}
                     </div>
             </li>
+            {% if author != request.user %}
             <li class="list-group-item">
+                    
                 {% if following %}
                 <a class="btn btn-lg btn-light" 
-                        href="{% url 'profile_unfollow' profile.author.username %}" role="button"> 
+                        href="{% url 'profile_unfollow' author.username %}" role="button"> 
                         Отписаться 
                 </a> 
                 {% else %}
                 <a class="btn btn-lg btn-primary" 
-                        href="{% url 'profile_follow' profile.author.username %}" role="button">
+                        href="{% url 'profile_follow' author.username %}" role="button">
                 Подписаться 
                 </a>
                 {% endif %}
+                
             </li>
+            {% endif %}
     </ul>
 </div>

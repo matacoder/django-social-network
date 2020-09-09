@@ -35,7 +35,7 @@ class Post(models.Model):
         verbose_name="Группа поста"
     )
 
-    image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    image = models.ImageField(upload_to="posts/", blank=True, null=True)
 
     class Meta:
         ordering = ["-pub_date"]
@@ -54,19 +54,19 @@ class Post(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
-        related_name="post_comments",
-        verbose_name="Комментарии к посту"
+        related_name="comments",
+        verbose_name="Пост этого комментария"
     )
     author = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name="user_comments",
-        verbose_name="Комментарии пользователя"
+        related_name="comments",
+        verbose_name="Автор комментария"
     )
     text = models.TextField(verbose_name="Текст комментария")
     created = models.DateTimeField(
@@ -88,7 +88,7 @@ class Comment(models.Model):
 class Follow(models.Model):
     user = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
         related_name="follower",
@@ -96,9 +96,13 @@ class Follow(models.Model):
     )
     author = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
         related_name="following",
         verbose_name="На кого подписался"
     )
+
+    class Meta:
+        unique_together = ["user", "author"]
+        unique_together = ["author", "user"]

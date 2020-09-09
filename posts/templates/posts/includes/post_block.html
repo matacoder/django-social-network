@@ -21,8 +21,8 @@
                     <div class="btn-group ">
                             <!-- Ссылка на страницу записи в атрибуте href-->
                             <a class="btn btn-sm text-muted" href="{% url 'post_single' username=post.author post_id=post.pk %}" role="button">
-                                {% if post.post_comments.exists %}
-                             {{ post.post_comments.count }} комментариев
+                                {% if post.comments.exists %}
+                             {{ post.comments.count }} комментариев
                             {% else%}
                               Добавить комментарий
                                   {% endif %}

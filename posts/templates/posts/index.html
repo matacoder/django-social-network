@@ -5,14 +5,14 @@
 
 {% block content %}
 
-    {% include "posts/menu.html" with index=True %}
+    {% include "posts/includes/menu.html" with index=True %}
     
     {% for post in page %}
-    {% include "posts/post_block.html" %}
+    {% include "posts/includes/post_block.html" %}
     {% endfor %}
     
     {% if page.has_other_pages %}
-    {% include "posts/paginator.html" with items=page paginator=paginator %}
+    {% include "posts/includes/paginator.html" with items=page paginator=paginator %}
     {% endif %}
 
 {% endblock %}

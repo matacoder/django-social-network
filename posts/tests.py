@@ -1,9 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.shortcuts import reverse
-from .models import Group, Post, Follow
-from django.core.files import File
+from .models import Group, Post, Follow, Comment
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 User = get_user_model()
 
@@ -12,7 +12,6 @@ class TestPostsAndLogin(TestCase):
     def setUp(self):
         """ Preparing test enviroment """
         self.client = Client()
-        self.client_cache = Client()
         self.client_unauthorized = Client()
         # create user
         self.user = User.objects.create_user(
@@ -34,52 +33,72 @@ class TestPostsAndLogin(TestCase):
             description="Testing Around 2",
         )
         # create post
-        with open("posts/file.jpg", "rb") as img:
-            self.post = Post.objects.create(
-                text=("Youre talking about things I havent"
-                      " done yet in the past tense. Its driving me crazy!"),
-                author=self.user,
-                group=self.testgroup,
-                image=File(img)
-            )
+        self.post = Post.objects.create(
+            text=("Youre talking about things I havent"
+                  " done yet in the past tense. Its driving me crazy!"),
+            author=self.user,
+            group=self.testgroup
+        )
         # login
         self.client.force_login(self.user, backend=None)
         cache.clear()
 
     def test_post_with_image(self):
         """ Post with image is added """
+        small_gif = (
+            b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04"
+            b"\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02"
+            b"\x02\x4c\x01\x00\x3b"
+        )
+        img = SimpleUploadedFile(
+            "small.gif",
+            small_gif,
+            content_type="image/gif"
+        )
         url = reverse("new_post")
-        with open("posts/file.jpg", "rb") as img:
-            data = {
-                "text": "Abracadabra with image",
-                "group": self.testgroup.id,
-                "image": img
-            }
-            response = self.client.post(url, data=data, follow=True)
-            cache.clear()
-            self.assertEqual(response.status_code, 200)
-            urls = self.generate_urls()
-            for url in urls:
-                response = self.client.get(url)
-                self.assertIn("img".encode(), response.content)
+        data = {
+            "text": "Abracadabra with image",
+            "group": self.testgroup.id,
+            "image": img
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        urls = self.generate_urls()
+        for url in urls:
+            response = self.client.get(url)
+            self.assertIn("<img".encode(), response.content)
 
     def test_non_img_file(self):
-        """ Test uploading non-image file README.md """
+        """ Test uploading non-image file """
+        wrong_file = (
+            b"\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02"
+            b"\x02\x4c\x01\x00\x3b"
+        )
+        self.wrong = SimpleUploadedFile(
+            "wrong_file.doc",
+            wrong_file,
+            content_type="doc"
+        )
         url = reverse("new_post")
-        with open("README.md", "rb") as img:
-            data = {
-                "text": "Abracadabra with non-image",
-                "group": self.testgroup.id,
-                "image": img
-            }
-            cache.clear()
-            response = self.client.post(url, data=data)
-            self.assertFalse(response.context["form"].is_valid())
+        data = {
+            "text": "Abracadabra with non-image",
+            "group": self.testgroup.id,
+            "image": self.wrong
+        }
+        response = self.client.post(url, data=data)
+        self.assertFormError(
+            response,
+            form="form",
+            field="image",
+            errors="Загрузите правильное изображение. Файл, "
+                   "который вы загрузили, поврежден или не "
+                   "является изображением.")
 
     def generate_urls(self):
+        lastpost = Post.objects.latest("pub_date")
         index = reverse("index")
         profile = reverse("profile", args=[self.user.username])
-        post = reverse("post_single", args=[self.user.username, 2])
+        post = reverse("post_single", args=[self.user.username, lastpost.pk])
         group = reverse("group_url", args=[self.testgroup.slug])
         return [index, profile, post, group]
 
@@ -220,13 +239,12 @@ class TestPostsAndLogin(TestCase):
         self.assertEqual(len(response.context["page"]), 1)
         # create skynet post
         self.post_skynet = Post.objects.create(
-                text=("Skynet test"),
+                text="Skynet test",
                 author=self.author,
                 group=self.testgroup
             )
         response = self.client.get(reverse("index"))
-        with self.assertRaises(TypeError):
-            len(response.context["page"])
+        self.assertIsNone(response.context)
         cache.clear()
         response = self.client.get(reverse("index"))
         self.assertEqual(len(response.context["page"]), 2)
@@ -237,26 +255,20 @@ class TestPostsAndLogin(TestCase):
             reverse("profile_follow", args=["skynet"]),
             follow=True
         )
-        cache.clear()
         self.assertEqual(response.status_code, 200)
         testobj = Follow.objects.get(user=self.user, author=self.author)
         self.assertTrue(testobj)
 
     def test_logged_in_unsubscribe(self):
         """ Logged in can unsubscribe from authors """
-        response = self.client.get(
-            reverse("profile_follow", args=["skynet"]),
-            follow=True
-        )
-        cache.clear()
+        Follow.objects.create(user=self.user, author=self.author)
         response = self.client.get(
             reverse("profile_unfollow", args=["skynet"]),
             follow=True
         )
-        cache.clear()
         self.assertEqual(response.status_code, 200)
-        testobj = Follow.objects.filter(user=self.user, author=self.author)
-        self.assertFalse(testobj)
+        num = Follow.objects.filter(user=self.user, author=self.author).count()
+        self.assertEqual(num, 0)
 
     def test_logged_out_subscribe(self):
         """ Logged out can not subscribe to authors """
@@ -264,47 +276,75 @@ class TestPostsAndLogin(TestCase):
             reverse("profile_follow", args=["sarah"])
         )
         self.assertEqual(response.status_code, 302)
-        testobj = Follow.objects.filter(author=self.user)
-        self.assertFalse(testobj)
+        num = Follow.objects.filter(author=self.user).count()
+        self.assertEqual(num, 0)
 
     def test_new_post_on_follow_page(self):
         """ New post displays on follow page
-            of subscribed authors and not """
-        self.client.get(
-            reverse("profile_follow", args=["skynet"]),
-            follow=True
-        )
+            of subscribed authors and does not
+            display if author not followed """
+
+        Follow.objects.create(user=self.user, author=self.author)
         # create skynet post
-        self.post_skynet = Post.objects.create(
+        post_skynet = Post.objects.create(
                 text=("Skynet test"),
                 author=self.author,
                 group=self.testgroup
             )
+        # check if it shows up
         display_resp = self.client.get(
             reverse("follow_index"),
-            follow=True
         )
-        self.assertIn("Skynet".encode(), display_resp.content)
+        page = display_resp.context["page"]
+        post = page[0]
+        self.assertEqual(
+            [post_skynet.text, post_skynet.group],
+            [post.text, post.group]
+        )
+        # check if post is hidden after unfollowing
+        if Follow.objects.filter(user=self.user, author=self.author).exists():
+            instance = Follow.objects.filter(
+                user=self.user,
+                author=self.author
+            )
+            instance.delete()
+        response = self.client.get(reverse("follow_index"))
+        page = response.context["page"]
+        elements = len(page)
+        self.assertEqual(elements, 0)
 
     def test_logged_in_comment(self):
         """ Logged user can comment """
         response = self.client.post(
-            reverse("add_comment", args=["sarah", "1"]),
+            reverse("add_comment", args=[self.post.author, self.post.pk]),
             {
                 "text": "Commenting",
                 "author": self.user
             },
             follow=True
         )
-        self.assertIn("Commenting".encode(), response.content)
+        # compare context to database
+        comments = response.context["items"]
+        comment = comments[0]
+        db_comment = Comment.objects.latest("created")
+        self.assertEqual(
+            [comment.text, comment.author],
+            [db_comment.text, db_comment.author]
+        )
 
     def test_logged_out_comment(self):
         """ Logged out can not comment """
         response = self.client_unauthorized.post(
-            reverse("add_comment", args=["sarah", "1"]),
+            reverse("add_comment", args=[self.post.author, self.post.pk]),
             {
                 "text": "Commenting"
             },
             follow=True
         )
-        self.assertNotIn("Commenting".encode(), response.content)
+        response = self.client.get(
+            reverse("post_single", args=[self.post.author, self.post.pk])
+        )
+        # check there is no comment added
+        items = response.context["items"]
+        elements = len(items)
+        self.assertEqual(elements, 0)

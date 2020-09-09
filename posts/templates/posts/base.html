@@ -11,7 +11,7 @@
         <script src="{% static 'bootstrap/dist/js/bootstrap.min.js' %}"></script>
     </head>
     <body>
-        {% include 'posts/nav.html' %}
+        {% include 'posts/includes/nav.html' %}
         <main>
             <div class="container">
                 <h1>{% block header %}Главная страница{% endblock %}</h1>
@@ -20,6 +20,6 @@
                 {% endblock content %}
             </div>
         </main>
-        {% include 'posts/footer.html' %}
+        {% include 'posts/includes/footer.html' %}
     </body>
 </html>
