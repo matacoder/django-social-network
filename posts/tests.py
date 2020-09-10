@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.shortcuts import reverse
-from .models import Group, Post, Follow, Comment
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.shortcuts import reverse
+from django.test import Client, TestCase
+
+from .models import Comment, Follow, Group, Post
 
 User = get_user_model()
 
@@ -239,10 +240,10 @@ class TestPostsAndLogin(TestCase):
         self.assertEqual(len(response.context["page"]), 1)
         # create skynet post
         self.post_skynet = Post.objects.create(
-                text="Skynet test",
-                author=self.author,
-                group=self.testgroup
-            )
+            text="Skynet test",
+            author=self.author,
+            group=self.testgroup
+        )
         response = self.client.get(reverse("index"))
         self.assertIsNone(response.context)
         cache.clear()
@@ -256,8 +257,9 @@ class TestPostsAndLogin(TestCase):
             follow=True
         )
         self.assertEqual(response.status_code, 200)
-        testobj = Follow.objects.get(user=self.user, author=self.author)
-        self.assertTrue(testobj)
+        self.assertTrue(Follow.objects.filter(
+            user=self.user, author=self.author).exists()
+        )
 
     def test_logged_in_unsubscribe(self):
         """ Logged in can unsubscribe from authors """
@@ -287,10 +289,10 @@ class TestPostsAndLogin(TestCase):
         Follow.objects.create(user=self.user, author=self.author)
         # create skynet post
         post_skynet = Post.objects.create(
-                text=("Skynet test"),
-                author=self.author,
-                group=self.testgroup
-            )
+            text=("Skynet test"),
+            author=self.author,
+            group=self.testgroup
+        )
         # check if it shows up
         display_resp = self.client.get(
             reverse("follow_index"),
@@ -298,16 +300,16 @@ class TestPostsAndLogin(TestCase):
         page = display_resp.context["page"]
         post = page[0]
         self.assertEqual(
-            [post_skynet.text, post_skynet.group],
-            [post.text, post.group]
+            post_skynet.text,
+            post.text
         )
-        # check if post is hidden after unfollowing
-        if Follow.objects.filter(user=self.user, author=self.author).exists():
-            instance = Follow.objects.filter(
-                user=self.user,
-                author=self.author
-            )
-            instance.delete()
+        self.assertEqual(
+            post_skynet.group,
+            post.group
+        )
+
+    def test_new_post_not_on_follow_page(self):
+        """ Check if post is hidden if not following """
         response = self.client.get(reverse("follow_index"))
         page = response.context["page"]
         elements = len(page)
@@ -328,8 +330,12 @@ class TestPostsAndLogin(TestCase):
         comment = comments[0]
         db_comment = Comment.objects.latest("created")
         self.assertEqual(
-            [comment.text, comment.author],
-            [db_comment.text, db_comment.author]
+            comment.text,
+            db_comment.text
+        )
+        self.assertEqual(
+            comment.author,
+            db_comment.author
         )
 
     def test_logged_out_comment(self):

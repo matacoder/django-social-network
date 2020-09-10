@@ -54,19 +54,17 @@ class Post(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
+        on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Пост этого комментария"
+        verbose_name="Пост этого комментария",
+        default='0000000'
     )
     author = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
+        on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Автор комментария"
+        verbose_name="Автор комментария",
+        default='0000000'
     )
     text = models.TextField(verbose_name="Текст комментария")
     created = models.DateTimeField(
@@ -88,21 +86,18 @@ class Comment(models.Model):
 class Follow(models.Model):
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
+        on_delete=models.PROTECT,
         related_name="follower",
-        verbose_name="Кто подписался"
+        verbose_name="Кто подписался",
+        default='0000000'
     )
     author = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
+        on_delete=models.PROTECT,
         related_name="following",
-        verbose_name="На кого подписался"
+        verbose_name="На кого подписался",
+        default='0000000'
     )
 
     class Meta:
         unique_together = ["user", "author"]
-        unique_together = ["author", "user"]
