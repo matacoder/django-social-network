@@ -56,15 +56,13 @@ class Comment(models.Model):
         Post,
         on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Пост этого комментария",
-        default='0000000'
+        verbose_name="Пост этого комментария"
     )
     author = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Автор комментария",
-        default='0000000'
+        verbose_name="Автор комментария"
     )
     text = models.TextField(verbose_name="Текст комментария")
     created = models.DateTimeField(
@@ -88,15 +86,13 @@ class Follow(models.Model):
         User,
         on_delete=models.PROTECT,
         related_name="follower",
-        verbose_name="Кто подписался",
-        default='0000000'
+        verbose_name="Кто подписался"
     )
     author = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="following",
-        verbose_name="На кого подписался",
-        default='0000000'
+        verbose_name="На кого подписался"
     )
 
     class Meta:

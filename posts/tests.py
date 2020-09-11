@@ -40,6 +40,7 @@ class TestPostsAndLogin(TestCase):
             author=self.user,
             group=self.testgroup
         )
+        
         # login
         self.client.force_login(self.user, backend=None)
         cache.clear()
@@ -289,11 +290,11 @@ class TestPostsAndLogin(TestCase):
         Follow.objects.create(user=self.user, author=self.author)
         # create skynet post
         post_skynet = Post.objects.create(
-            text=("Skynet test"),
+            text="Skynet test displaying",
             author=self.author,
             group=self.testgroup
         )
-        # check if it shows up
+        # check if post shows up
         display_resp = self.client.get(
             reverse("follow_index"),
         )
@@ -310,6 +311,12 @@ class TestPostsAndLogin(TestCase):
 
     def test_new_post_not_on_follow_page(self):
         """ Check if post is hidden if not following """
+        # create skynet post
+        post_skynet = Post.objects.create(
+            text="Skynet test not displaying",
+            author=self.author,
+            group=self.testgroup
+        )
         response = self.client.get(reverse("follow_index"))
         page = response.context["page"]
         elements = len(page)
