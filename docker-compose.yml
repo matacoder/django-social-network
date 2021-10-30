@@ -4,8 +4,6 @@ services:
 
   django:
     build: .
-    depends_on:
-      - db
     restart: always
     env_file:
       - ./.env

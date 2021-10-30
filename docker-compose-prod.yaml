@@ -9,8 +9,6 @@ volumes:
 services:
   django:
     image: matakov/matacoders:latest
-    depends_on:
-      - db
     restart: always
     env_file:
       - ./.env

@@ -21,3 +21,5 @@ media/
 tests/
 
 db.sqlite3
+/.env
+/dump.json
