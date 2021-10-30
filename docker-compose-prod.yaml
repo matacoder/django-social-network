@@ -2,6 +2,7 @@ version: '3.9'
 # instruction at the end of file
 
 volumes:
+  db:
   static:
   media:
   nginx_conf:
@@ -14,6 +15,7 @@ services:
       - ./.env
     volumes:
       - static:/code/static
+      - db:/code/db
       - media:/code/media
       - nginx_conf:/code/nginx/
     entrypoint: /code/entrypoint.sh

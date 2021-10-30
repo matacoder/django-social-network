@@ -20,6 +20,6 @@ posts/static/
 media/
 tests/
 
-db.sqlite3
+db/db.sqlite3
 /.env
 /dump.json
