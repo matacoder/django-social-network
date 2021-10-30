@@ -8,7 +8,7 @@ volumes:
 
 services:
   django:
-    image: matakov/wb:latest
+    image: matakov/matacoders:latest
     depends_on:
       - db
     restart: always
