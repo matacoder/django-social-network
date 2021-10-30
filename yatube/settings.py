@@ -3,15 +3,15 @@ import os
 SITE_ID = 1
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = "@21=c_)np)91r0%qy^&mvqa1$5zb&kr+rpkjm4emn-)3k#)ju8"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG") == "1"
 
 ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
-        "[::1]",
-        "testserver",
+        "django.matakov.com",
+        "mtkv.ru",
 ]
 
 CACHES = {
