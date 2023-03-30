@@ -16,15 +16,10 @@ class Group(models.Model):
 class Post(models.Model):
     text = models.TextField(verbose_name="Текст поста")
     pub_date = models.DateTimeField(
-        verbose_name="Дата публикации",
-        auto_now_add=True,
-        db_index=True
+        verbose_name="Дата публикации", auto_now_add=True, db_index=True
     )
     author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="posts",
-        verbose_name="Автор поста"
+        User, on_delete=models.CASCADE, related_name="posts", verbose_name="Автор поста"
     )
     group = models.ForeignKey(
         Group,
@@ -32,7 +27,7 @@ class Post(models.Model):
         blank=True,
         null=True,
         related_name="group_posts",
-        verbose_name="Группа поста"
+        verbose_name="Группа поста",
     )
 
     image = models.ImageField(upload_to="posts/", blank=True, null=True)
@@ -56,19 +51,16 @@ class Comment(models.Model):
         Post,
         on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Пост этого комментария"
+        verbose_name="Пост этого комментария",
     )
     author = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="comments",
-        verbose_name="Автор комментария"
+        verbose_name="Автор комментария",
     )
     text = models.TextField(verbose_name="Текст комментария")
-    created = models.DateTimeField(
-        verbose_name="Дата комментария",
-        auto_now_add=True
-    )
+    created = models.DateTimeField(verbose_name="Дата комментария", auto_now_add=True)
 
     def __str__(self):
         # выводим кратко информацию о созданном комментарии
@@ -86,13 +78,13 @@ class Follow(models.Model):
         User,
         on_delete=models.PROTECT,
         related_name="follower",
-        verbose_name="Кто подписался"
+        verbose_name="Кто подписался",
     )
     author = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         related_name="following",
-        verbose_name="На кого подписался"
+        verbose_name="На кого подписался",
     )
 
     class Meta:

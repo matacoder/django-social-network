@@ -10,12 +10,12 @@ class PostForm(ModelForm):  # extending ModelForm, not Form as before
         help_texts = {
             "text": "Напишите этот пост. Давайте же.",
             "group": "Стоит указать, где этот пост будет жить",
-            "image": "Загрузите картинку"
+            "image": "Загрузите картинку",
         }
         labels = {
             "text": "Текст вашего поста",
             "group": "Выберите группу",
-            "image": "Выберите изображение для поста"
+            "image": "Выберите изображение для поста",
         }
 
 
@@ -23,9 +23,5 @@ class CommentForm(ModelForm):  # extending ModelForm, not Form as before
     class Meta:
         model = Comment
         fields = ["text"]
-        help_texts = {
-            "text": "Напишите комментарий"
-        }
-        labels = {
-            "text": "Текст вашего комментария"
-        }
+        help_texts = {"text": "Напишите комментарий"}
+        labels = {"text": "Текст вашего комментария"}

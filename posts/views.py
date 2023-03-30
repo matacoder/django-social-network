@@ -9,9 +9,9 @@ from .models import Follow, Group, Post, User
 
 @cache_page(20, key_prefix="index_page")
 def index(request):
-    post_list = Post.objects.select_related(
-        "author", "group"
-    ).order_by("-pub_date").all()
+    post_list = (
+        Post.objects.select_related("author", "group").order_by("-pub_date").all()
+    )
 
     paginator = Paginator(post_list, 10)
     # показывать по 10 записей на странице.
@@ -19,23 +19,13 @@ def index(request):
     # переменная в URL с номером запрошенной страницы
     page = paginator.get_page(page_number)
     # получить записи с нужным смещением
-    return render(
-        request,
-        "posts/index.html",
-        {
-            "page": page,
-            "paginator": paginator
-        }
-    )
+    return render(request, "posts/index.html", {"page": page, "paginator": paginator})
 
 
 @login_required
 def add_comment(request, username, post_id):
     post = get_object_or_404(Post, pk=post_id, author__username=username)
-    url = reverse(
-        "post_single",
-        kwargs={"username": username, "post_id": post_id}
-    )
+    url = reverse("post_single", kwargs={"username": username, "post_id": post_id})
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
@@ -54,12 +44,9 @@ def group_posts(request, slug):
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
     return render(
-        request, "posts/group.html",
-        {
-            "page": page,
-            "paginator": paginator,
-            "group": group
-            }
+        request,
+        "posts/group.html",
+        {"page": page, "paginator": paginator, "group": group},
     )
 
 
@@ -71,13 +58,8 @@ def new_post(request):
         form.save()
         url = reverse("index")
         return redirect(url)
-    labels = {
-        "title": "Новая запись",
-        "button": "Добавить новую запись"
-    }
-    return render(
-        request, "posts/new_post.html", {"form": form, "labels": labels}
-    )
+    labels = {"title": "Новая запись", "button": "Добавить новую запись"}
+    return render(request, "posts/new_post.html", {"form": form, "labels": labels})
 
 
 def profile(request, username):
@@ -94,13 +76,14 @@ def profile(request, username):
             following = True
 
     return render(
-        request, "posts/profile.html",
+        request,
+        "posts/profile.html",
         {
             "page": page,
             "paginator": paginator,
             "author": author,
-            "following": following
-        }
+            "following": following,
+        },
     )
 
 
@@ -110,13 +93,9 @@ def post_view(request, username, post_id):
     comments = post.comments.all()
     form = CommentForm()
     return render(
-        request, "posts/post.html",
-        {
-            "post": post,
-            "author": author,
-            "form": form,
-            "items": comments
-        }
+        request,
+        "posts/post.html",
+        {"post": post, "author": author, "form": form, "items": comments},
     )
 
 
@@ -124,46 +103,25 @@ def post_view(request, username, post_id):
 def post_edit(request, username, post_id):
     template_name = "posts/new_post.html"
     post = get_object_or_404(Post, pk=post_id, author__username=username)
-    url = reverse(
-        "post_single",
-        kwargs={"username": username, "post_id": post_id}
-    )
+    url = reverse("post_single", kwargs={"username": username, "post_id": post_id})
     if post.author != request.user:
         return redirect(url)
 
-    form = PostForm(
-        request.POST or None,
-        files=request.FILES or None,
-        instance=post
-    )
+    form = PostForm(request.POST or None, files=request.FILES or None, instance=post)
 
     if request.POST and form.is_valid():
         form.save()
         return redirect(url)
 
-    labels = {
-        "title": "Редактировать запись",
-        "button": "Сохранить"
-    }
+    labels = {"title": "Редактировать запись", "button": "Сохранить"}
 
     return render(
-        request,
-        template_name,
-        {
-            "form": form,
-            "labels": labels,
-            "post": post
-        }
+        request, template_name, {"form": form, "labels": labels, "post": post}
     )
 
 
 def page_not_found(request, exception):
-    return render(
-        request,
-        "misc/404.html",
-        {"path": request.path},
-        status=404
-    )
+    return render(request, "misc/404.html", {"path": request.path}, status=404)
 
 
 def server_error(request):
@@ -183,12 +141,9 @@ def follow_index(request):
     page_number = request.GET.get("page")
     page = paginator.get_page(page_number)
     return render(
-        request, "posts/follow.html",
-        {
-            "page": page,
-            "paginator": paginator,
-            "username": logged
-        }
+        request,
+        "posts/follow.html",
+        {"page": page, "paginator": paginator, "username": logged},
     )
 
 
@@ -201,9 +156,7 @@ def profile_follow(request, username):
         return redirect(url)
     if author == user:
         return redirect(url)
-    Follow.objects.create(
-        user=user, author=author
-    )
+    Follow.objects.create(user=user, author=author)
     return redirect(url)
 
 

@@ -5,15 +5,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('posts', '0012_auto_20200909_0925'),
+        ("posts", "0012_auto_20200909_0925"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='follow',
-            unique_together={('author', 'user')},
+            name="follow",
+            unique_together={("author", "user")},
         ),
     ]

@@ -6,20 +6,33 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('posts', '0010_follow'),
+        ("posts", "0010_follow"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='follow',
-            name='author',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='following', to=settings.AUTH_USER_MODEL, verbose_name='На кого подписался'),
+            model_name="follow",
+            name="author",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="following",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="На кого подписался",
+            ),
         ),
         migrations.AlterField(
-            model_name='follow',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='follower', to=settings.AUTH_USER_MODEL, verbose_name='Кто подписался'),
+            model_name="follow",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="follower",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Кто подписался",
+            ),
         ),
     ]
