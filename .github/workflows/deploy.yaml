@@ -1,4 +1,4 @@
-name: Django social Matacoders workflow
+name: django.matakov.com workflow
 
 on:
   push:
@@ -38,8 +38,8 @@ jobs:
           docker context use remote
           docker image prune -f
           docker build -t matakov/matacoders:latest .
-          docker-compose --context remote -f docker-compose-prod.yaml down
-          docker-compose --context remote -f docker-compose-prod.yaml up -d --force-recreate
+          docker compose -f docker-compose-prod.yaml down
+          docker compose  -f docker-compose-prod.yaml up -d --force-recreate
 
   send_message:
     name: Send telegram notification
