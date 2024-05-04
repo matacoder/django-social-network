@@ -39,7 +39,7 @@ jobs:
           docker image prune -f
           docker build -t matakov/matacoders:latest .
           docker compose -f docker-compose-prod.yaml down
-          docker compose  -f docker-compose-prod.yaml up -d --force-recreate
+          docker compose -f docker-compose-prod.yaml up -d --force-recreate
 
   send_message:
     name: Send telegram notification
